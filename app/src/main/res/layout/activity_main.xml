@@ -19,15 +19,17 @@
 
     <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/nickInput"
-        android:layout_width="282dp"
-        android:layout_height="71dp"
-        android:hint="hint"
+        android:layout_width="265dp"
+        android:layout_height="72dp"
+        android:maxLength="20"
+        android:maxLines="1"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.404" />
+        app:layout_constraintVertical_bias="0.404"
+        tools:ignore="SpeakableTextPresentCheck" />
 
     <TextView
         android:layout_width="wrap_content"

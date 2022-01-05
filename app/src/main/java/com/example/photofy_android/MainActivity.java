@@ -4,6 +4,7 @@ import static android.provider.AlarmClock.EXTRA_MESSAGE;
 import static io.reactivex.schedulers.Schedulers.start;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
@@ -48,12 +49,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        statusText = (TextView) findViewById(R.id.statusText);
+        statusText = findViewById(R.id.statusText);
         nickText = findViewById((R.id.nickInput));
         submitButton = findViewById(R.id.submitButton);
-        hubConnection = HubConnectionBuilder.create("http://192.168.50.93:5001/websocket").build();
-        hubConnection.start().blockingAwait();
-
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        try {
+            hubConnection = HubConnectionBuilder.create(Global.IP_ADDRESS + "/websocket").build();
+            hubConnection.start().blockingAwait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         final Handler handler = new Handler();
         final int delay = 1000; // 1000 milliseconds == 1 second
 
@@ -67,48 +72,58 @@ public class MainActivity extends AppCompatActivity {
         checkperm();
 
     }
-    public void SendNick(View view){
+
+    public void SendNick(View view) {
+        if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
+//            nickText.setError("Disconnected from server");
+            return;
+        }
+
         String nick = nickText.getText().toString();
-        //validate input
-        Context context = getApplicationContext();
+        if(nick.contains(";") || nick.isEmpty()){
+            nickText.setError("Nick cannot contain semicolons or be empty");
+            return;
+        }
+
         String result;
 
         try {
-             result = hubConnection.invoke(String.class, "NewUser", nick).blockingGet();
-        }catch (HubException e){
-            Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+            result = hubConnection.invoke(String.class, "NewUser", nick).blockingGet();
+        } catch (HubException e) {
+            Toast.makeText(getApplicationContext(), Global.getPrettyException(e), Toast.LENGTH_SHORT).show();
             return;
         }
-        Intent intent = new Intent(this, SignedIn.class);
+        Intent intent = new Intent(getApplicationContext(), SignedIn.class);
 
         intent.putExtra("LobbyId", result);
-        intent.putExtra("NickName",nick);
+        Global.NICK = nick;
         HubConnectionHandler.setHubConnection(hubConnection);
         startActivity(intent);
 
     }
-    private void Refresh(){
+
+    private void Refresh() {
         HubConnectionState x = hubConnection.getConnectionState();
-        if(x == HubConnectionState.DISCONNECTED) hubConnection.start().blockingAwait();
-        statusText.setText("Status: " +x.toString() );
-    }
-    private synchronized void checkperm(){
-        if (ContextCompat.checkSelfPermission(
-                getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                PackageManager.PERMISSION_GRANTED) {
-            return;
-        } else{
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},0);
+        statusText.setText("Status: " + x.toString());
+        if (x == HubConnectionState.DISCONNECTED) {
+            try {
+                hubConnection.start().blockingAwait();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
-
-
-
-
-
+    private synchronized void checkperm() {
+        if (ContextCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                PackageManager.PERMISSION_GRANTED) {
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+            }
+        }
+    }
 
 
 }

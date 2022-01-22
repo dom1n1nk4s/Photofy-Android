@@ -4,8 +4,9 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="../../../../../layout/custom_preview.xml" value="0.2140625" />
+        <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.2708333333333333" />
         <entry key="app/src/main/res/layout/activity_assign_image_owner.xml" value="0.21" />
-        <entry key="app/src/main/res/layout/activity_choose_random_image.xml" value="0.5" />
+        <entry key="app/src/main/res/layout/activity_choose_random_image.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_signed_in.xml" value="0.67" />
         <entry key="app/src/main/res/layout/fragment_blank.xml" value="0.19895833333333332" />

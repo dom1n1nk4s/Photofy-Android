@@ -1,10 +1,8 @@
 package com.example.photofy_android;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.microsoft.signalr.HubConnection;
-import com.microsoft.signalr.HubConnectionState;
 import com.microsoft.signalr.HubException;
 
 import org.json.JSONArray;
@@ -31,7 +28,6 @@ public class SignedIn extends AppCompatActivity {
     TextInputEditText lobbyTextInput;
     HubConnection hubConnection;
 
-
     ArrayList<Participant> participants;
 
     @Override
@@ -44,37 +40,33 @@ public class SignedIn extends AppCompatActivity {
         lobbyTextInput = findViewById(R.id.lobbyTextInput);
         participants = new ArrayList<Participant>();
         hubConnection = HubConnectionHandler.getHubConnection();
-        Global.CONNECTION_ID = hubConnection.invoke(String.class,"GetId").blockingGet();
+        Global.CONNECTION_ID = hubConnection.invoke(String.class, "GetId").blockingGet();
         lobbyText.setText("Lobby ID: " + intent.getStringExtra("LobbyId"));
 
-        participants.add(new Participant(Global.NICK, false,Global.CONNECTION_ID));
+        participants.add(new Participant(Global.NICK, false, Global.CONNECTION_ID));
         setParticipantText();
 
-        OnBackPressedCallback callback = new OnBackPressedCallback(true ) {
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-
                 hubConnection.stop().blockingAwait();
                 finish();
-
             }
         };
         getOnBackPressedDispatcher().addCallback(this, callback);
 
-
         hubConnection.on("JoinedNewMember", (name, isReady, id) -> {
-            /*actually needed*/
             runOnUiThread(() -> Toast.makeText(getApplicationContext(), name + " has joined the lobby!", Toast.LENGTH_SHORT).show());
-            participants.add(new Participant(name, isReady,id));
+            participants.add(new Participant(name, isReady, id));
             setParticipantText();
         }, String.class, Boolean.class, String.class);
 
         hubConnection.on("MemberToggleReady", (id) -> {
-            for (int i = 0; i<participants.size();i++) {
+            for (int i = 0; i < participants.size(); i++) {
                 Participant p = participants.get(i);
                 if (p.ConnectionId.equals(id)) {
                     p.IsReady = !p.IsReady;
-                    participants.set(i,p);
+                    participants.set(i, p);
                     setParticipantText();
                     return;
                 }
@@ -91,27 +83,25 @@ public class SignedIn extends AppCompatActivity {
         }, String.class);
         hubConnection.on("StartImageActivity", () -> {
 
-            for (int i = 0; i<participants.size();i++) {
+            for (int i = 0; i < participants.size(); i++) {
                 Participant p = participants.get(i);
-                    p.IsReady = false;
-                    participants.set(i,p);
-                }
+                p.IsReady = false;
+                participants.set(i, p);
+            }
             setParticipantText();
 
             Intent intent_image = new Intent(getApplicationContext(), ChooseRandomImage.class);
 
             startActivity(intent_image);
 
-
-
         });
 
     }
 
     public void joinLobby(View view) {
-        String toJoinString =lobbyTextInput.getText().toString().toUpperCase(Locale.ROOT);
-        if(toJoinString.length() < 4) return;
-        if(toJoinString.equals(lobbyText.getText().toString().substring(10))){
+        String toJoinString = lobbyTextInput.getText().toString().toUpperCase(Locale.ROOT);
+        if (toJoinString.length() < 4) return;
+        if (toJoinString.equals(lobbyText.getText().toString().substring(10))) {
             Toast.makeText(getApplicationContext(), "Already in specified lobby", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -134,18 +124,17 @@ public class SignedIn extends AppCompatActivity {
             return;
         }
         setParticipantText();
-        lobbyText.setText("Lobby ID: "+toJoinString);
+        lobbyText.setText("Lobby ID: " + toJoinString);
         lobbyTextInput.setText("");
         Toast.makeText(getApplicationContext(), "Joined!", Toast.LENGTH_SHORT).show();
     }
 
-    @SuppressLint("CheckResult")
     public void ToggleReady(View view) {
-        for (int i = 0; i< participants.size();i++) {
+        for (int i = 0; i < participants.size(); i++) {
             Participant p = participants.get(i);
             if (p.ConnectionId.equals(Global.CONNECTION_ID)) {
                 p.IsReady = !p.IsReady;
-                participants.set(i,p);
+                participants.set(i, p);
                 break;
             }
         }
@@ -153,15 +142,10 @@ public class SignedIn extends AppCompatActivity {
         try {
             hubConnection.invoke("ToggleReady").blockingAwait();
         } catch (HubException e) {
-            runOnUiThread(() -> {
-                Toast.makeText(getApplicationContext(), Global.getPrettyException(e), Toast.LENGTH_LONG).show();// TODO FIX BUG DOESNT SHOW TOAST/EXCEPTION
-            });
-
-
+            runOnUiThread(() -> Toast.makeText(getApplicationContext(), Global.getPrettyException(e), Toast.LENGTH_LONG).show());
             hubConnection.stop();
             finish();
         }
-
     }
 
     private void setParticipantText() {
@@ -174,10 +158,6 @@ public class SignedIn extends AppCompatActivity {
             participantText.setText(result.toString());
         });
 
-    }
-    public void testClick(View view)
-    {
-        setParticipantText();
     }
 
     class Participant {

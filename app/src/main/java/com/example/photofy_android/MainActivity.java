@@ -1,42 +1,25 @@
 package com.example.photofy_android;
 
-import static android.provider.AlarmClock.EXTRA_MESSAGE;
-import static io.reactivex.schedulers.Schedulers.start;
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
-
-import android.Manifest;
-import android.app.Activity;
-import android.content.ContentUris;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.provider.MediaStore;
-import android.text.Editable;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
 import com.microsoft.signalr.HubConnectionState;
 import com.microsoft.signalr.HubException;
-
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import io.reactivex.Completable;
 
 public class MainActivity extends AppCompatActivity {
     TextView statusText;
@@ -49,12 +32,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Global.setIpAddress(getString(R.string.ip_address)); /*this must be set somewhere as the ip address for the backend, ex.http://2.44.33.145:5001*/
         statusText = findViewById(R.id.statusText);
         nickText = findViewById((R.id.nickInput));
         submitButton = findViewById(R.id.submitButton);
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         try {
-            hubConnection = HubConnectionBuilder.create(Global.IP_ADDRESS + "/websocket").build();
+            hubConnection = HubConnectionBuilder.create(Global.getIpAddress() + "/websocket").build();
             hubConnection.start().blockingAwait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -115,14 +99,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private synchronized void checkperm() {
-        if (ContextCompat.checkSelfPermission(
-                getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                PackageManager.PERMISSION_GRANTED) {
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
-            }
+        if(ContextCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
         }
+
+//        if (ContextCompat.checkSelfPermission(
+//                getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
+//                PackageManager.PERMISSION_GRANTED) {
+//        } else {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+//            }
+//        }
     }
 
 

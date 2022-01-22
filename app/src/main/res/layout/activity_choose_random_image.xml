@@ -20,7 +20,7 @@
         app:srcCompat="@drawable/ic_launcher_background" />
 
     <Button
-        android:id="@+id/button3"
+        android:id="@+id/getDifferentImageButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
@@ -40,5 +40,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Switch
+        android:id="@+id/dcimSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="24dp"
+        android:minHeight="48dp"
+        android:text="Use only camera photos"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:checked="false" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

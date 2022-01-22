@@ -1,17 +1,22 @@
 package com.example.photofy_android;
 
 public class Global {
-        //    public static String IP_ADDRESS = "http://192.168.50.93:5001";
-        public static String IP_ADDRESS = "http://***REMOVED***:5001";
+        private static String IP_ADDRESS;
         public static String CONNECTION_ID;
         public static String NICK;
-
         public static String getPrettyException(Exception e){
                 return e.getMessage().split(": ")[1];
         }
+        public static void setIpAddress(String ip){
+                IP_ADDRESS = ip;
+        }
+
+        public static String getIpAddress(){
+                return IP_ADDRESS;
+        }
 }
-/*replace the current connectionid system with a manually server generated one
-*
-*
-*
-* */
+/*
+TODO if there is poor stability, replace the current connectionid system with a manually server generated one
+TODO add build variants for debug and release
+
+ */

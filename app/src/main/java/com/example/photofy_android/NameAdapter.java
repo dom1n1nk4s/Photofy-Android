@@ -5,20 +5,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
-
-import java.util.List;
 
 public class NameAdapter extends BaseAdapter {
     Context context;
     String[] names;
 
 
-    public NameAdapter(Context c, String[] n){
-        context =c;
+    public NameAdapter(Context c, String[] n) {
+        context = c;
         names = n;
     }
+
     @Override
     public int getCount() {
         return names.length;

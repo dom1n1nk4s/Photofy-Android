@@ -1,20 +1,17 @@
 package com.example.photofy_android;
 
 import android.graphics.Bitmap;
-import android.view.View;
-import android.widget.TextView;
 
 public class ImageNodeItem {
     private final String trueTitle;
+    private final Bitmap image;
     private String guessTitle;
     private String connectionId;
-    private final Bitmap image;
 
-    public ImageNodeItem(String title, String id, Bitmap img)
-    {
-    trueTitle = title;
-    connectionId = id;
-    image = img;
+    public ImageNodeItem(String title, String id, Bitmap img) {
+        trueTitle = title;
+        connectionId = id;
+        image = img;
 
     }
 
@@ -23,16 +20,16 @@ public class ImageNodeItem {
     }
 
     public String getGuessTitle() {
+        if (guessTitle == null) return "";
         return guessTitle;
     }
 
     public void setGuessTitle(String gT) {
         this.guessTitle = gT;
     }
-    public boolean isCorrect(){
+
+    public boolean isCorrect() {
         return guessTitle.equals(trueTitle);
-
-
     }
 
     public String getConnectionId() {

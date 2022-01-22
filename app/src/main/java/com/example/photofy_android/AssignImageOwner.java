@@ -2,10 +2,11 @@ package com.example.photofy_android;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
@@ -14,6 +15,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
@@ -27,18 +29,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
 public class AssignImageOwner extends AppCompatActivity {
 
-    TextView selectedTextView = null;
     boolean imageGridViewClicked = false;
     boolean nameGridViewClicked = false;
-    int assignedCount = 0;
     Button submitButton;
     String[] guesses;
     HubConnection hubConnection;
@@ -49,6 +46,11 @@ public class AssignImageOwner extends AppCompatActivity {
     ImageAdapter imageAdapter;
     TextView labelTextView;
     GridView imageGridView;
+    GridView nameGridView;
+    ZoomableImageView zoomableImageView;
+    int selectedImageIndex;
+    TextView tutorialText;
+    private long lastPressTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +64,22 @@ public class AssignImageOwner extends AppCompatActivity {
         leftButton = findViewById(R.id.left_button);
         labelTextView = findViewById(R.id.labelTextView);
         imageGridView = findViewById(R.id.grid_view_images);
+        zoomableImageView = findViewById(R.id.zoomedImage);
+        tutorialText = findViewById(R.id.tutorialText);
+
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (SystemClock.elapsedRealtime() - lastPressTime < 500) {
+                    finish();
+                } else {
+                    runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Double click to return to lobby", Toast.LENGTH_SHORT).show());
+                    lastPressTime = SystemClock.elapsedRealtime();
+
+                }
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
 
         hubConnection.on("StartResultActivity", (g) -> {
             new Thread(() -> {
@@ -80,8 +98,16 @@ public class AssignImageOwner extends AppCompatActivity {
                     }
                 }
 
+                submitButton.setOnClickListener(view -> {
+                    Intent intent = new Intent(getApplicationContext(), ChooseRandomImage.class);
+                    startActivity(intent);
+                    finish();
+                });
                 runOnUiThread(() -> {
-
+                    submitButton.setText("Restart");
+                    submitButton.setVisibility(View.VISIBLE);
+                    submitButton.setEnabled(true);
+                    nameGridView.setVisibility(View.GONE);
                     rightButton.setVisibility(View.VISIBLE);
                     leftButton.setVisibility(View.VISIBLE);
                     labelTextView.setVisibility(View.VISIBLE);
@@ -95,9 +121,28 @@ public class AssignImageOwner extends AppCompatActivity {
 
         }, Collection.class);
 
+        zoomableImageView.setOnClickListener(view -> {
+            zoomableImageView.setVisibility(View.GONE);
+            nameGridView.setVisibility(View.VISIBLE);
+            for (int i = 0; i < nameGridView.getChildCount(); i++) {
+                View nameView = nameGridView.getChildAt(i);
+                CharSequence nameAtView = ((TextView) nameView.findViewById(R.id.textView)).getText();
+                String selectedImageTitle = imageAdapter.getGuessTitle(selectedImageIndex);
 
+                if (selectedImageTitle == null) selectedImageTitle = "";
+
+                if (nameAtView.equals(selectedImageTitle)) // currently selected
+                    nameView.setBackgroundColor(0xFFBB86FC);//purple
+                else if (imageAdapter.isUsedSomewhere((String) nameAtView))
+                    nameView.setBackgroundColor(0xFF474646);//gray
+                else
+                    nameView.setBackgroundColor(0xFF000000);//black
+
+            }
+
+        });
 // Request a string response from the provided URL.
-        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, Global.IP_ADDRESS + "/api/file/" + Global.CONNECTION_ID, null, response -> {
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, Global.getIpAddress() + "/api/file/" + Global.CONNECTION_ID, null, response -> {
 
             ImageNodeItem[] imageNodeItem = new ImageNodeItem[response.length()];
             String[] participantTitles = new String[response.length()];
@@ -116,67 +161,60 @@ public class AssignImageOwner extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-            Context c = getApplicationContext(); //TODO REPLACE ALL getApplicationContext() calls with a variable
+            Context c = getApplicationContext();
 
             imageAdapter = new ImageAdapter(c, imageNodeItem);
             imageGridView.setAdapter(imageAdapter);
-            GridView nameGridView = findViewById(R.id.grid_view_names);
+            nameGridView = findViewById(R.id.grid_view_names);
             shuffle(participantTitles);
             nameGridView.setAdapter(new NameAdapter(c, participantTitles));
 
             imageGridView.setOnItemClickListener((adapterView, view, i, l) -> {
                 synchronized (this) {
-
                     if (imageGridViewClicked) return;
                     imageGridViewClicked = true;
-                    TextView textview = view.findViewById(R.id.textView);
 
-                    if (selectedTextView != null) {
+                    tutorialText.setVisibility(View.GONE);
+                    submitButton.setVisibility(View.INVISIBLE);
 
-                        if (selectedTextView == textview) { // if same, deselect
-                            selectedTextView.setBackgroundColor(0);
-                            selectedTextView = null;
-                            imageGridViewClicked = false;
+                    selectedImageIndex = i;
 
-                        } else {
-                            if (textview.length() == 0) assignedCount++;
-                            CharSequence temp = textview.getText();
-                            String guess = selectedTextView.getText().toString();
-                            imageAdapter.setImageGuessTitle(guess, i,view);
-                            selectedTextView.setText(temp);
-
-                            selectedTextView.setBackgroundColor(0);
-                            selectedTextView = null;
-                        }
-                    } else if (textview.getText().length() != 0) {
-                        selectedTextView = textview;
-                        selectedTextView.setBackgroundColor(Color.MAGENTA);
-                    }
-                    if (assignedCount >= participantTitles.length && !submitButton.isEnabled()) {
-                        submitButton.setVisibility(View.VISIBLE);
-                        submitButton.setEnabled(true);
-
-                    }
+                    zoomableImageView.setImageBitmap(imageAdapter.getImageBitmap(i));
+                    zoomableImageView.setVisibility(View.VISIBLE);
+                    imageGridView.setClickable(false);
 
                     imageGridViewClicked = false;
                 }
             });
             nameGridView.setOnItemClickListener((adapterView, view, i1, l) -> {
                 synchronized (this) {
-
-                    TextView textview = view.findViewById(R.id.textView);
-                    if (textview.getText().length() == 0 || nameGridViewClicked)
-                        return; // essentially deactivated
+                    if (nameGridViewClicked) return;
                     nameGridViewClicked = true;
+                    CharSequence result = ((TextView) view.findViewById(R.id.textView)).getText();
 
-                    if (selectedTextView != null) { // deselect previous
-                        selectedTextView.setBackgroundColor(0);
+                    for (int i = 0; i < imageGridView.getChildCount(); i++) { // if changing selection, delete previous selection
+                        if (i == selectedImageIndex) continue;
+                        View tempView = imageGridView.getChildAt(i);
+                        TextView textview = tempView.findViewById(R.id.textView);
+                        if (textview.getText().equals(result)) {
+                            int finalI = i;
+                            runOnUiThread(() -> {
+                                imageAdapter.setImageGuessTitle("", finalI, tempView);
+                                submitButton.setEnabled(false);
+                                submitButton.setVisibility(View.INVISIBLE);
+                            });
+                            break;
+                        }
                     }
-                    if (selectedTextView == textview) { // if same, deselect
-                        selectedTextView = null;
-                    } else {
-                        selectedTextView = textview;
-                        selectedTextView.setBackgroundColor(Color.MAGENTA);
+
+                    runOnUiThread(() -> imageAdapter.setImageGuessTitle((String) result, selectedImageIndex, imageGridView.getChildAt(selectedImageIndex)));
+
+                    nameGridView.setVisibility(View.GONE);
+                    imageGridView.setClickable(true);
+
+                    if (imageAdapter.haveNames()) {
+                        submitButton.setVisibility(View.VISIBLE);
+                        submitButton.setEnabled(true);
                     }
                     nameGridViewClicked = false;
                 }
@@ -185,6 +223,7 @@ public class AssignImageOwner extends AppCompatActivity {
             queue.stop();
         }, error -> {
             Toast.makeText(getApplicationContext(), new String(error.networkResponse.data, StandardCharsets.UTF_8), Toast.LENGTH_LONG).show();
+            finish();
             queue.stop();
         });
         queue.add(jsonArrayRequest);
@@ -203,7 +242,6 @@ public class AssignImageOwner extends AppCompatActivity {
             submitButton.post(() -> {
                 submitButton.setEnabled(false);
                 submitButton.setVisibility(View.INVISIBLE);
-
             });
 
             hubConnection.invoke("EstablishChoices", guessesConcat.toString()).blockingAwait();
@@ -222,8 +260,8 @@ public class AssignImageOwner extends AppCompatActivity {
 
             for (int i = 0; i < guessParticipants[selectedParticipantIndex].Guesses.length; i++) {
                 View view = imageGridView.getChildAt(i);
-                imageAdapter.setImageGuessTitle(guessParticipants[selectedParticipantIndex].Guesses[i], i,view);
-                imageAdapter.setValidity(i,view);
+                imageAdapter.setImageGuessTitle(guessParticipants[selectedParticipantIndex].Guesses[i], i, view);
+                imageAdapter.setValidity(i, view);
             }
         });
     }
@@ -238,6 +276,16 @@ public class AssignImageOwner extends AppCompatActivity {
         drawGuesses();
     }
 
+    private void shuffle(String[] array) {
+        Random r = new Random();
+        for (int i = 0; i < array.length; i++) {
+            int j = r.nextInt(array.length);
+            String temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
     class GuessParticipant {
         public String Title;
         public String[] Guesses;
@@ -245,15 +293,6 @@ public class AssignImageOwner extends AppCompatActivity {
         public GuessParticipant(String title, String[] guesses) {
             Title = title;
             Guesses = guesses;
-        }
-    }
-    private void shuffle(String[] array){
-        Random r = new Random();
-        for(int i = 0; i< array.length; i++){
-            int j = r.nextInt(array.length);
-            String temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
         }
     }
 }

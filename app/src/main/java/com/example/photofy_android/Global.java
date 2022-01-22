@@ -1,7 +1,7 @@
 package com.example.photofy_android;
 
 public class Global {
-        private static String IP_ADDRESS;
+        private static String IP_ADDRESS = "http://2.44.33.145:5001";  /*REPLACE THIS WITH YOUR BACKEND IP ADDRESS*/
         public static String CONNECTION_ID;
         public static String NICK;
         public static String getPrettyException(Exception e){

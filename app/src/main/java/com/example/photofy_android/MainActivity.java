@@ -32,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Global.setIpAddress(getString(R.string.ip_address)); /*this must be set somewhere as the ip address for the backend, ex.http://2.44.33.145:5001*/
         statusText = findViewById(R.id.statusText);
         nickText = findViewById((R.id.nickInput));
         submitButton = findViewById(R.id.submitButton);
